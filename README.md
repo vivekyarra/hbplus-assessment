@@ -16,7 +16,7 @@ npm run web
 
 Fill in `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` with the dedicated Supabase project's public configuration. `EXPO_PUBLIC_ALLOWED_DOMAIN` controls the displayed domain and the client's secondary check. Keep it consistent with the server policy. Expo embeds `EXPO_PUBLIC_*` values in the bundle.
 
-Run `npm run android` or `npm run ios` to build a development app and launch it on the selected emulator or simulator. Use the development app for OAuth so its callback scheme is registered. The Expo web server runs on port 8081 by default.
+Run `npm run android` or `npm run ios` to build a development app and launch it on the selected emulator or simulator. Use the development app for OAuth so its callback scheme is registered. The Expo web server runs on port 8081 by default. For Windows PowerShell, use `Copy-Item .env.example .env.local` in place of `cp` if needed.
 
 ## Configure Google and Supabase
 
@@ -36,7 +36,7 @@ Run `npm run android` or `npm run ios` to build a development app and launch it 
 4. The app uses the session to request its profile. Postgres checks the caller's identity before creating or returning the profile. Expo Router renders the dashboard only after this check. An unauthenticated visit to `/dashboard` goes to the sign-in screen.
 5. **Sign out** ends the current Supabase session and removes its local credentials. Supabase access tokens have a short lifetime. Logout also closes the protected route in the app.
 
-A denied account receives “Access restricted. Please login using your official domain email.”
+When the Google provider is enabled, a denied account receives “Access restricted. Please login using your official domain email.”
 
 To change the domain, update `private.settings.allowed_domain` in a migration and change `EXPO_PUBLIC_ALLOWED_DOMAIN` before rebuilding. The database policy remains authoritative.
 
