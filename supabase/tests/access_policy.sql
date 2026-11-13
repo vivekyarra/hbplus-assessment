@@ -65,7 +65,13 @@ begin
 end;
 $$;
 
-select count(*) as eligible_profile_count from public.profiles;
+do $$
+begin
+  if (select count(*) from public.profiles) <> 1 then
+    raise exception 'Eligible user could not read their own profile';
+  end if;
+end;
+$$;
 select set_config('request.jwt.claim.sub', '7ffbf601-0000-4000-8000-000000000002', true);
 do $$
 begin

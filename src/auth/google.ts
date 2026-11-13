@@ -36,6 +36,13 @@ async function complete(url: URL, verifier: string | null) {
 }
 
 export async function startGoogle() {
+  const settings = await fetch(`${serviceUrl}/auth/v1/settings`, {
+    headers: { apikey: publishableKey! },
+  });
+  if (!settings.ok || (await settings.json()).external?.google !== true) {
+    throw new Error('Google sign-in is unavailable right now. Please try again.');
+  }
+
   const web = Platform.OS === 'web';
   const redirect = web ? `${location.origin}/auth/callback` : nativeCallback;
   const bytes = await Crypto.getRandomBytesAsync(32);

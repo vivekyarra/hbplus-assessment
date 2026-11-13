@@ -29,7 +29,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const actionPending = useRef(false);
   const callback = useRef<Promise<void> | null>(null);
   const token = session?.access_token;
-  const checked = useRef<string | null>(null);
 
   useEffect(() => {
     if (!client) {
@@ -66,12 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!session || !token) {
-      checked.current = null;
       setProfile(null);
       setVerifiedFor(null);
       return;
     }
-    if (checked.current === token) return;
+
     const request = new AbortController();
     const timeout = setTimeout(() => request.abort('timeout'), 12000);
     const authorize = async () => {
@@ -79,7 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await fetchProfile(session, request.signal);
         if (!matchesDomain(result.email, allowedDomain)) throw new Error('restricted');
         if (request.signal.aborted) return;
-        checked.current = token;
         setProfile(result);
         setVerifiedFor(token);
         setError(null);
@@ -89,9 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setVerifiedFor(null);
         const restricted = failure instanceof Error && failure.message === 'restricted';
         setError(restricted ? RESTRICTED : 'We could not verify access. Please sign in again.');
-        const { error: logoutError } = await client!.auth.signOut({ scope: 'local' }).catch(() => ({ error: true }));
-        if (logoutError && !request.signal.aborted) setSession(null);
-        if (request.signal.reason === 'timeout') setSession(null);
+        setSession((active) => active?.access_token === token ? null : active);
+        void client!.auth.signOut({ scope: 'local' }).catch(() => {});
       } finally {
         clearTimeout(timeout);
       }
@@ -109,8 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setBusy(true);
     setError(null);
     try {
-      const completed = await startGoogle();
-      if (completed && Platform.OS === 'web') return;
+      if (!(await startGoogle())) setError('Google sign-in was cancelled. Please try again.');
     } catch (failure) {
       setError(failure instanceof Error && failure.message === RESTRICTED
         ? RESTRICTED
