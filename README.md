@@ -2,7 +2,7 @@
 
 HB+ Workspace is a React Native app for Android, iOS, and the browser. It uses Expo Router, React Native for Web, Google OAuth 2.0, and Supabase Auth and Postgres. Workspace access requires a verified Google identity with an exact `hbplus.fit` email domain.
 
-**Web deployment** · [hbplus-assessment.vercel.app](https://hbplus-assessment.vercel.app)
+**Live app (Netlify)** · [hbplus-assessment.netlify.app](https://hbplus-assessment.netlify.app) · Mirror on Vercel · [hbplus-assessment.vercel.app](https://hbplus-assessment.vercel.app)
 
 ## Run locally
 
@@ -56,7 +56,14 @@ where u.id = p.id
 
 ## Deployment
 
-The web build is a single-page application. Netlify can import this repository using the checked-in `netlify.toml`. Set the three public environment variables before building. If using another host, publish `dist/` from `npm run build:web` and ensure `/dashboard` and `/auth/callback` fall back to `index.html`.
+The web build is a single-page application. The production site runs on Netlify at https://hbplus-assessment.netlify.app. The checked-in `netlify.toml` sets the build command, the `dist` publish folder, the SPA fallback to `index.html`, and security headers, including a Content Security Policy that only allows connections to Supabase.
+
+1. Create a Netlify project and set `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `EXPO_PUBLIC_ALLOWED_DOMAIN` as environment variables.
+2. Import this repository, or build locally with `npm run build:web` and run `netlify deploy --prod --no-build --dir dist`.
+3. Add `https://YOUR_SITE.netlify.app/auth/callback` to the Supabase redirect URLs. Without it, Supabase sends the user back to the Site URL instead of the callback.
+4. Turn off Netlify visitor access protection so evaluators can open the site.
+
+The same build is mirrored on Vercel with `vercel.json`. On any other host, publish `dist/` and make `/dashboard` and `/auth/callback` fall back to `index.html`.
 
 ## Verification
 
