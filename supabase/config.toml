@@ -3,6 +3,7 @@ project_id = "hbplus-domain-access"
 [auth]
 site_url = "https://hbplus-assessment.vercel.app"
 additional_redirect_urls = [
+  "https://hbplus-assessment.netlify.app/auth/callback",
   "https://hbplus-assessment.vercel.app/auth/callback",
   "http://localhost:8081/auth/callback",
   "fit.hbplus.workspace://auth/callback"
