@@ -1,0 +1,27 @@
+project_id = "hbplus-domain-access"
+
+[auth]
+site_url = "https://hbplus-assessment.vercel.app"
+additional_redirect_urls = [
+  "https://hbplus-assessment.vercel.app/auth/callback",
+  "http://localhost:8081/auth/callback",
+  "fit.hbplus.workspace://auth/callback"
+]
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+jwt_expiry = 900
+
+[auth.email]
+enable_signup = false
+
+[auth.sms]
+enable_signup = false
+
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/private/before_user_created"
+
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/private/before_token_issued"
