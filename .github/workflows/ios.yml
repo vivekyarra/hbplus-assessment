@@ -1,0 +1,61 @@
+name: iOS simulator
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/ios.yml
+      - app.json
+      - package-lock.json
+      - package.json
+      - 'src/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  simulator:
+    runs-on: macos-15
+    timeout-minutes: 40
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: https://uwxxgfonhsbsignjohjm.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.HBPLUS_SUPABASE_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_ALLOWED_DOMAIN: hbplus.fit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Generate the Xcode workspace
+        run: |
+          npx expo prebuild --platform ios --no-install
+          cd ios
+          pod install
+      - name: Build and launch on an iPhone simulator
+        shell: bash
+        run: |
+          set -eo pipefail
+          simulator=$(xcrun simctl list devices available --json | python3 -c 'import json, sys; runtimes = json.load(sys.stdin)["devices"]; print(next(d["udid"] for rt, devices in sorted(runtimes.items(), reverse=True) if ".iOS-" in rt for d in devices if d["name"].startswith("iPhone")))')
+          xcrun simctl boot "$simulator"
+          workspace=$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)
+          scheme=$(basename "$workspace" .xcworkspace)
+          xcodebuild -workspace "$workspace" -scheme "$scheme" -configuration Release \
+            -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator" \
+            -derivedDataPath "$RUNNER_TEMP/hbplus-ios" CODE_SIGNING_ALLOWED=NO build \
+            > "$RUNNER_TEMP/hbplus-xcode.log" 2>&1 || { tail -n 100 "$RUNNER_TEMP/hbplus-xcode.log"; exit 1; }
+          xcrun simctl bootstatus "$simulator" -b
+          app=$(find "$RUNNER_TEMP/hbplus-ios/Build/Products/Release-iphonesimulator" -maxdepth 1 -name '*.app' -print -quit)
+          xcrun simctl install "$simulator" "$app"
+          launch=$(xcrun simctl launch "$simulator" fit.hbplus.workspace)
+          printf '%s\n' "$launch"
+          pid="${launch##*: }"
+          sleep 12
+          kill -0 "$pid"
+          xcrun simctl io "$simulator" screenshot "$RUNNER_TEMP/hbplus-ios.png"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-simulator-evidence
+          path: |
+            ${{ runner.temp }}/hbplus-ios.png
+            ${{ runner.temp }}/hbplus-xcode.log
